@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
 
 data = [
     { "x": 3.5, "y": 18.0},
@@ -96,8 +97,9 @@ class Predictor:
 
         plt.show()
 
+training_rate = input("Training rate:")
+training_steps = input("Training steps:")
 
+predictor = Predictor(0, 0, float(training_rate))
 
-predictor = Predictor(0, 0, 0.01)
-
-predictor.trainModel(data, 3500)
+predictor.trainModel(data, int(training_steps))
