@@ -1,0 +1,20 @@
+[project]
+name = "linear-regresion-taxi"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Diego", email = "diegogomezledo@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "google-ml-edu==0.1.3",
+    "plotly>=7.1.0",
+]
+
+[project.scripts]
+linear-regresion-taxi = "linear_regresion_taxi:main"
+
+[build-system]
+requires = ["uv_build>=0.12.23,<0.13.0"]
+build-backend = "uv_build"
