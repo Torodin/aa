@@ -8,6 +8,7 @@ import ml_edu.results
 import plotly.express as px
 
 import matplotlib.pyplot as plt
+import argparse
 
 def create_model(
     settings: ml_edu.experiment.ExperimentSettings,
@@ -54,7 +55,73 @@ def train_model(
         metrics_history=pd.DataFrame(history.history),
     )
 
+def experiment_1(dataset: pd.DataFrame):
+    settings_1 = ml_edu.experiment.ExperimentSettings(
+        learning_rate = 0.001,
+        number_epochs = 20,
+        batch_size = 50,
+        input_features = ['TRIP_MILES']
+    )
+
+    metrics = [keras.metrics.RootMeanSquaredError(name='rmse')]
+
+    model_1 = create_model(settings_1, metrics)
+    experiment_model_1 = train_model('one_feature', model_1, dataset, 'FARE', settings_1)
+
+    ml_edu.results.plot_experiment_metrics(experiment_model_1, ['rmse'])
+    ml_edu.results.plot_model_predictions(experiment_model_1, dataset, 'FARE')
+
+def experiment_2(dataset: pd.DataFrame):
+    settings_2 = ml_edu.experiment.ExperimentSettings(
+        learning_rate = 0.001,
+        number_epochs = 100,
+        batch_size = 500,
+        input_features = ['TRIP_MILES']
+    )
+
+    metrics = [keras.metrics.RootMeanSquaredError(name='rmse')]
+
+    model_2 = create_model(settings_2, metrics)
+    experiment_model_2 = train_model('one_feature_hyper', model_2, dataset, 'FARE', settings_2)
+
+    ml_edu.results.plot_experiment_metrics(experiment_model_2, ['rmse'])
+    ml_edu.results.plot_model_predictions(experiment_model_2, dataset, 'FARE')
+
+    # With learning rate 1.0 and batch 50 the rmse take a bit longer to reduce
+    # when learning rate is to high training would be harder
+
+    # With learning rate 0.0001 and batch 50 the model dont reach the convergence
+    # with more epochs surely but its not ideal
+
+    # With learning rate 0.001 and batch 500 I see something between the two previous tests
+    # The rmse decrease slowly and need more epochs. That said, the training runs much faster.
+
+    # Repeating the last test until the model reach the convergence it needs around 60 epochs
+
+
+EXPERIMENTS = {
+    1: experiment_1,
+    2: experiment_2
+}
+
 def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="AA experiments"
+    )
+
+    parser.add_argument(
+        "-e",
+        "--experiments",
+        type=int,
+        nargs="+",
+        choices=list(EXPERIMENTS.keys()),
+        required=True,
+        help="IDs of the experiments"
+    )
+
+    args = parser.parse_args()
+    selected_experiments = list(dict.fromkeys(args.experiments))
+
     chicago_taxi_dataset = pd.read_csv("https://download.mlcc.google.com/mledu-datasets/chicago_taxi_train.csv")
 
     training_df = chicago_taxi_dataset.loc[:, ('TRIP_MILES', 'TRIP_SECONDS', 'FARE', 'COMPANY', 'PAYMENT_TYPE', 'TIP_RATE')]
@@ -68,46 +135,7 @@ def main() -> None:
     fig = px.scatter_matrix(training_df, dimensions=["FARE", "TRIP_MILES", "TRIP_SECONDS"])
     fig.show()
 
-    # Experiment 1
-    settings_1 = ml_edu.experiment.ExperimentSettings(
-        learning_rate = 0.001,
-        number_epochs = 20,
-        batch_size = 50,
-        input_features = ['TRIP_MILES']
-    )
-
-    metrics = [keras.metrics.RootMeanSquaredError(name='rmse')]
-
-    model_1 = create_model(settings_1, metrics)
-    experiment_1 = train_model('one_feature', model_1, training_df, 'FARE', settings_1)
-
-    ml_edu.results.plot_experiment_metrics(experiment_1, ['rmse'])
-    ml_edu.results.plot_model_predictions(experiment_1, training_df, 'FARE')
-
-    settings_2 = ml_edu.experiment.ExperimentSettings(
-        learning_rate = 0.001,
-        number_epochs = 100,
-        batch_size = 500,
-        input_features = ['TRIP_MILES']
-    )
-
-    metrics = [keras.metrics.RootMeanSquaredError(name='rmse')]
-
-    model_2 = create_model(settings_2, metrics)
-    experiment_2 = train_model('one_feature_hyper', model_2, training_df, 'FARE', settings_2)
-
-    ml_edu.results.plot_experiment_metrics(experiment_2, ['rmse'])
-    ml_edu.results.plot_model_predictions(experiment_2, training_df, 'FARE')
-
-    # With learning rate 1.0 and batch 50 the rmse take a bit longer to reduce
-    # when learning rate is to high training would be harder
-
-    # With learning rate 0.0001 and batch 50 the model dont reach the convergence
-    # with more epochs surely but its not ideal
-
-    # With learning rate 0.001 and batch 500 I see something between the two previous tests
-    # The rmse decrease slowly and need more epochs. That said, the training runs much faster.
-
-    # Repeating the last test until the model reach the convergence it needs around 60 epochs
+    for experiment_id in selected_experiments:
+        EXPERIMENTS[experiment_id](training_df)
 
     plt.show()
