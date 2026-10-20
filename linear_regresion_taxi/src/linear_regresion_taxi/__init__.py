@@ -55,7 +55,7 @@ def train_model(
         metrics_history=pd.DataFrame(history.history),
     )
 
-def experiment_1(dataset: pd.DataFrame):
+def experiment_1(dataset: pd.DataFrame) -> ml_edu.experiment.Experiment:
     settings_1 = ml_edu.experiment.ExperimentSettings(
         learning_rate = 0.001,
         number_epochs = 20,
@@ -71,7 +71,9 @@ def experiment_1(dataset: pd.DataFrame):
     ml_edu.results.plot_experiment_metrics(experiment_model_1, ['rmse'])
     ml_edu.results.plot_model_predictions(experiment_model_1, dataset, 'FARE')
 
-def experiment_2(dataset: pd.DataFrame):
+    return experiment_model_1
+
+def experiment_2(dataset: pd.DataFrame) -> ml_edu.experiment.Experiment:
     settings_2 = ml_edu.experiment.ExperimentSettings(
         learning_rate = 0.001,
         number_epochs = 100,
@@ -87,6 +89,8 @@ def experiment_2(dataset: pd.DataFrame):
     ml_edu.results.plot_experiment_metrics(experiment_model_2, ['rmse'])
     ml_edu.results.plot_model_predictions(experiment_model_2, dataset, 'FARE')
 
+    return experiment_model_2
+
     # With learning rate 1.0 and batch 50 the rmse take a bit longer to reduce
     # when learning rate is to high training would be harder
 
@@ -98,10 +102,33 @@ def experiment_2(dataset: pd.DataFrame):
 
     # Repeating the last test until the model reach the convergence it needs around 60 epochs
 
+def experiment_3(dataset: pd.DataFrame) -> ml_edu.experiment.Experiment:
+    settings_3 = ml_edu.experiment.ExperimentSettings(
+        learning_rate = 0.001,
+        number_epochs = 20,
+        batch_size = 50,
+        input_features = ['TRIP_MILES', 'TRIP_MINUTES']
+    )
+
+    dataset['TRIP_MINUTES'] = dataset['TRIP_SECONDS']/60
+
+    metrics = [keras.metrics.RootMeanSquaredError(name='rmse')]
+
+    model_3 = create_model(settings_3, metrics)
+    experiment_model_3 = train_model("two_features", model_3, dataset, "FARE", settings_3)
+
+    ml_edu.results.plot_experiment_metrics(experiment_model_3, ['rmse'])
+    ml_edu.results.plot_model_predictions(experiment_model_3, dataset, 'FARE')
+
+    return experiment_model_3
+
+    # The rmse is consistently lower than experiment 1
+    # Changing the scale from seconds to minutes help the model training closing the gap between the features
 
 EXPERIMENTS = {
     1: experiment_1,
-    2: experiment_2
+    2: experiment_2,
+    3: experiment_3
 }
 
 def main() -> None:
@@ -135,7 +162,11 @@ def main() -> None:
     fig = px.scatter_matrix(training_df, dimensions=["FARE", "TRIP_MILES", "TRIP_SECONDS"])
     fig.show()
 
+    experiments_results = []
     for experiment_id in selected_experiments:
-        EXPERIMENTS[experiment_id](training_df)
+        experiment_result = EXPERIMENTS[experiment_id](training_df)
+        experiments_results.append(experiment_result)
+
+    ml_edu.results.compare_experiment(experiments_results, ["rmse"], training_df, training_df["FARE"].values)
 
     plt.show()
