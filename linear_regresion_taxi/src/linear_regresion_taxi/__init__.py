@@ -84,4 +84,30 @@ def main() -> None:
     ml_edu.results.plot_experiment_metrics(experiment_1, ['rmse'])
     ml_edu.results.plot_model_predictions(experiment_1, training_df, 'FARE')
 
+    settings_2 = ml_edu.experiment.ExperimentSettings(
+        learning_rate = 0.001,
+        number_epochs = 100,
+        batch_size = 500,
+        input_features = ['TRIP_MILES']
+    )
+
+    metrics = [keras.metrics.RootMeanSquaredError(name='rmse')]
+
+    model_2 = create_model(settings_2, metrics)
+    experiment_2 = train_model('one_feature_hyper', model_2, training_df, 'FARE', settings_2)
+
+    ml_edu.results.plot_experiment_metrics(experiment_2, ['rmse'])
+    ml_edu.results.plot_model_predictions(experiment_2, training_df, 'FARE')
+
+    # With learning rate 1.0 and batch 50 the rmse take a bit longer to reduce
+    # when learning rate is to high training would be harder
+
+    # With learning rate 0.0001 and batch 50 the model dont reach the convergence
+    # with more epochs surely but its not ideal
+
+    # With learning rate 0.001 and batch 500 I see something between the two previous tests
+    # The rmse decrease slowly and need more epochs. That said, the training runs much faster.
+
+    # Repeating the last test until the model reach the convergence it needs around 60 epochs
+
     plt.show()
